@@ -2,6 +2,8 @@
 -- Upgraded code by LibertyForce http://steamcommunity.com/id/libertyforce
 -- Based on: https://github.com/garrynewman/garrysmod/blob/1a2c317eeeef691e923453018236cf9f66ee74b4/garrysmod/gamemodes/sandbox/gamemode/editor_player.lua
 
+-- TODO: Find and translate every single instance where TranslatePlayerHands is used.
+
 
 local flag = { FCVAR_REPLICATED }
 if SERVER then flag = { FCVAR_ARCHIVE, FCVAR_REPLICATED } end
@@ -210,8 +212,18 @@ local function UpdatePlayerModel( ply )
 		
 		timer.Simple( 0.1, function() if ply.SetupHands and isfunction( ply.SetupHands ) then ply:SetupHands() end end )
 		timer.Simple( 0.2, function()
-			if ply:GetInfo( "cl_playerhands" ) != "" then mdlname = ply:GetInfo( "cl_playerhands" ) end
-			local mdlhands = player_manager.TranslatePlayerHands( mdlname )
+			local mdlhands = { }
+			if ply:GetInfo( "cl_playerhands" ) != "" then
+				local AllHandModels = list.Get( "PlayerOptionsCArms" )
+				local handname = ply:GetInfo( "cl_playerhands" )
+				if AllHandModels[handname] then
+					mdlhands.model = AllHandModels[handname]
+					mdlhands.skin = 0
+					mdlhands.body = "0000000"
+					if debugmode then print( "LF_PMS: mdlhands.model set to: "..tostring( mdlhands.model ) ) end
+				end
+			end
+			if table.IsEmpty( mdlhands ) then mdlhands = player_manager.TranslatePlayerHands( mdlname ) end
 			
 			local hands_ent = ply:GetHands()
 			if hands_ent and mdlhands and istable( mdlhands ) then
@@ -293,8 +305,12 @@ hook.Add( "PlayerSpawn", "lf_playermodel_force_hook1", function( ply )
 end )
 
 hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
-	if ply:GetInfo( "cl_playerhands" ) and ply:GetInfo( "cl_playerhands" ) != "" then
-		local info = player_manager.TranslatePlayerHands( ply:GetInfo( "cl_playerhands" ) )
+	local AllHandModels = list.Get( "PlayerOptionsCArms" )
+	if ply:GetInfo( "cl_playerhands" ) and ply:GetInfo( "cl_playerhands" ) != "" and AllHandModels[handname] then
+		local info = { }
+		info.model = AllHandModels[handname]
+		info.skin = 0
+		info.body = "0000000"
 
 		if ( info ) then
 			timer.Simple( 0, function()
@@ -752,7 +768,7 @@ function Menu.Setup()
 				timer.Simple( 0.1, function() Menu.UpdateFromConvars() end )
 			end
 			
-			local AllModels = player_manager.AllValidModels()
+			local AllHandModels = list.Get( "PlayerOptionsCArms" )
 			--AllModels["AbsolutelyNone"] = ""
 			--PrintTable(AllModels)
 			
@@ -792,7 +808,7 @@ function Menu.Setup()
 						
 						ModelList:AddLine( name, model )
 				
-				for name, model in SortedPairs( AllModels ) do
+				for name, model in SortedPairs( AllHandModels ) do
 					
 					if IsInFilter( name ) then
 					
@@ -1415,6 +1431,7 @@ function Menu.Setup()
 			local intro = [[Created by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>.<br>Thank you for installing this addon! Enjoying it?<br>
 			Modified by <a href="javascript:url.open( 'http://steamcommunity.com/id/Fesiug' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/Fesiug' )">Fesiug</a>. You can now customize your hands!<br>
 			Modified by <a href="javascript:url.open( 'http://steamcommunity.com/id/yurannnzzz' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/yurannnzzz' )">YuRaNnNzZZ</a>. You can see your selected hands!<br>
+			Modified by <a href="javascript:url.open( 'https://steamcommunity.com/id/skyninja1' )" oncontextmenu="url.copy( 'https://steamcommunity.com/id/skyninja1' )">Paynamia</a>. Hands have their own list now!<br>
 			<a href="javascript:url.open( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )" oncontextmenu="url.copy( 'http://steamcommunity.com/sharedfiles/filedetails/?id=504945881' )">Please leave a LIKE on the workshop page.</a>]]
 			if !game.SinglePlayer() and !LocalPlayer():IsSuperAdmin() then
 				intro = [[This server is running Enhanced PlayerModel Selector by <a href="javascript:url.open( 'http://steamcommunity.com/id/libertyforce' )" oncontextmenu="url.copy( 'http://steamcommunity.com/id/libertyforce' )">LibertyForce</a>. Enjoying it?<br>
@@ -1726,13 +1743,17 @@ function Menu.Setup()
 
 		if true or ( Menu.IsHandsTabActive() ) then
 			mdl:SetModel( handsAnimModel )
-			local model = LocalPlayer():GetInfo( "cl_playerhands" )
-
-			if ( model == "" ) then
-				model = LocalPlayer():GetInfo( "cl_playermodel" )
+			local mdlhands = { }
+			if LocalPlayer():GetInfo( "cl_playerhands" ) != "" then
+				local AllHandModels = list.Get( "PlayerOptionsCArms" )
+				local handname = LocalPlayer():GetInfo( "cl_playerhands" )
+				if AllHandModels[handname] then
+					mdlhands.model = AllHandModels[handname]
+					mdlhands.skin = 0
+					mdlhands.body = "0000000"
+				end
 			end
-
-			local mdlhands = player_manager.TranslatePlayerHands( model )
+			if table.IsEmpty( mdlhands ) then mdlhands = player_manager.TranslatePlayerHands( mdlname ) end
 
 			util.PrecacheModel( mdlhands.model )
 
@@ -1749,7 +1770,9 @@ function Menu.Setup()
 			mdl.EntityHands:SetBodyGroups( mdlhands.body )
 			mdl.EntityHands.GetPlayerColor = function() return Vector( GetConVar( "cl_playercolor" ):GetString() ) end
 
-			Menu.PlayHandsPreviewAnimation( mdl, model )
+			-- So, this second param here is totally unused, and is a leftover from the pm version of the function.
+			-- Will remove later.
+			Menu.PlayHandsPreviewAnimation( mdl, LocalPlayer():GetInfo( "cl_playermodel" ) )
 			--Menu.RebuildBodygroupTab()
 			--return
 		end
@@ -1946,3 +1969,22 @@ end
 
 
 end
+
+list.Set( "PlayerOptionsCArms",	"citizen",	"models/weapons/c_arms_citizen.mdl" )
+list.Set( "PlayerOptionsCArms",	"combine",	"models/weapons/c_arms_combine.mdl" )
+list.Set( "PlayerOptionsCArms",	"chell",	"models/weapons/c_arms_chell.mdl" )
+list.Set( "PlayerOptionsCArms",	"hev",		"models/weapons/c_arms_hev.mdl" )
+list.Set( "PlayerOptionsCArms",	"refugee",	"models/weapons/c_arms_refugee.mdl" )
+list.Set( "PlayerOptionsCArms",	"cstrike",	"models/weapons/c_arms_cstrike.mdl" )
+list.Set( "PlayerOptionsCArms",	"dod",		"models/weapons/c_arms_dod.mdl" )
+
+
+hook.Add( "PostGamemodeLoaded", "BuildHandListHook", function()
+	for name, model in SortedPairs( player_manager.AllValidModels() ) do
+		local hands = player_manager.TranslatePlayerHands( name )
+		if !list.Contains( "PlayerOptionsCArms", hands.model ) then
+			list.Set( "PlayerOptionsCArms", name, hands.model )
+		end
+	end
+end )
+
