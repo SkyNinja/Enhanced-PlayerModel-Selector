@@ -2,8 +2,6 @@
 -- Upgraded code by LibertyForce http://steamcommunity.com/id/libertyforce
 -- Based on: https://github.com/garrynewman/garrysmod/blob/1a2c317eeeef691e923453018236cf9f66ee74b4/garrysmod/gamemodes/sandbox/gamemode/editor_player.lua
 
--- TODO: Find and translate every single instance where TranslatePlayerHands is used.
-
 
 local flag = { FCVAR_REPLICATED }
 if SERVER then flag = { FCVAR_ARCHIVE, FCVAR_REPLICATED } end
