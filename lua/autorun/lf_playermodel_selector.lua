@@ -307,15 +307,12 @@ hook.Add( "PlayerSetHandsModel", "lf_fe_hands_select2", function( ply, ent )
 	if ply:GetInfo( "cl_playerhands" ) and ply:GetInfo( "cl_playerhands" ) != "" and AllHandModels[handname] then
 		local info = { }
 		info.model = AllHandModels[handname]
-		info.skin = 0
-		info.body = "0000000"
 
 		if ( info ) then
 			timer.Simple( 0, function()
 				if IsValid(ent) then
 					ent:SetModel( info.model )
-					ent:SetSkin( info.skin )
-					ent:SetBodyGroups( info.body )
+					ent:SetBodyGroups( "0000000" )
 
 					local skin = ply:GetInfoNum( "cl_playerhandsskin", 0 )
 					ent:SetSkin( skin )
